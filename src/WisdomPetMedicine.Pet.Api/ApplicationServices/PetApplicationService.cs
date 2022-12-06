@@ -1,4 +1,6 @@
-﻿using WisdomPetMedicine.Pet.Api.Commands;
+﻿using Dapr.Client;
+using Microsoft.AspNetCore.Http.HttpResults;
+using WisdomPetMedicine.Pet.Api.Commands;
 using WisdomPetMedicine.Pet.Api.IntegrationEvents;
 using WisdomPetMedicine.Pet.Domain.Events;
 using WisdomPetMedicine.Pet.Domain.Repositories;
@@ -12,9 +14,11 @@ public class PetApplicationService
     private readonly IPetRepository petRepository;
     private readonly IBreedService breedService;
     private readonly ILogger<PetApplicationService> logger;
+    private const string PubSubName = "pubsub";
     public PetApplicationService(IPetRepository petRepository,
                                  IBreedService breedService,
-                                 ILogger<PetApplicationService> logger)
+                                 ILogger<PetApplicationService> logger,
+                                 DaprClient daprClient)
     {
         this.petRepository = petRepository;
         this.breedService = breedService;
@@ -29,7 +33,8 @@ public class PetApplicationService
                                                                              c.Color,
                                                                              c.DateOfBirth,
                                                                              c.Species);
-            
+            await daprClient.PublishEventAsync(PubSubName, "pet-flagged-for-adoption", integrationEvent);
+
         });
 
         DomainEvents.PetTransferredToHospital.Register(async c =>
@@ -41,7 +46,8 @@ public class PetApplicationService
                                                                              c.Color,
                                                                              c.DateOfBirth,
                                                                              c.Species);
-            
+            await daprClient.PublishEventAsync(PubSubName, "pet-transferred-to-hospital", integrationEvent);
+
         });
     }
 
