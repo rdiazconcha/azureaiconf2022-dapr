@@ -25,6 +25,7 @@ public class IntegrationEventsController : ControllerBase
         this.logger = logger;
     }
 
+    [HttpPost]
     [Topic("pubsub", "pet-transferred-to-hospital")]
     public async Task<IActionResult> OnPetTransferredToHospital(PetTransferredToHospitalIntegrationEvent theEvent)
     {
