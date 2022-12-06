@@ -1,0 +1,1 @@
+dapr run --app-id rescue --app-port 5001 --dapr-http-port 50001 -- dotnet run --urls http://+:5001

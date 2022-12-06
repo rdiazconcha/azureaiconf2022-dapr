@@ -1,0 +1,1 @@
+dapr run --app-id pet --app-port 5000 --dapr-http-port 50000 -- dotnet run --urls http://+:5000
