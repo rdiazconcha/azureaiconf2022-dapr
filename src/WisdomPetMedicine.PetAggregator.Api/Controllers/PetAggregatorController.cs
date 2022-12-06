@@ -17,6 +17,27 @@ public class PetAggregatorController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> Get()
     {
+        var lastQuery = await daprClient.GetStateEntryAsync<StateModel>("statestore", "lastquery");
+        if (lastQuery.Value != null && DateTime.UtcNow <= lastQuery.Value.LastQuery.AddSeconds(30))
+        {
+            return Ok(lastQuery.Value.Data);
+        }
+
+        IEnumerable<dynamic>? result = null;
+
+        bool saved = false;
+        while (!saved)
+        {
+            result = await QueryPets();
+            lastQuery.Value = new StateModel(DateTime.UtcNow, result);
+            saved = await lastQuery.TrySaveAsync();
+        }
+
+        return Ok(result);
+    }
+
+    private async Task<IEnumerable<dynamic>> QueryPets()
+    {
         var pets = await daprClient.InvokeMethodAsync<IEnumerable<PetModel>>(HttpMethod.Get, "pet", "petquery");
 
         var rescues = await daprClient.InvokeMethodAsync<IEnumerable<RescueModel>>(HttpMethod.Get, "rescuequery", "rescuequery");
@@ -48,7 +69,6 @@ public class PetAggregatorController : ControllerBase
                              rescue.AdoptionStatus
                          }
                      };
-        return Ok(result);
-
+        return result;
     }
 }
